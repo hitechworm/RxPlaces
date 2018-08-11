@@ -1,11 +1,11 @@
 package com.hitechworm.rxplaces
 
-import com.hitechworm.rxplaces.entity.Prediction
 import com.hitechworm.rxplaces.entity.SuggestionResult
-import io.reactivex.Single
 import okhttp3.OkHttpClient
+import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.lang.Exception
 
 class PlaceServiceClient internal constructor(private val apiKey: String) {
 
@@ -21,6 +21,8 @@ class PlaceServiceClient internal constructor(private val apiKey: String) {
             .client(OkHttpClient())
             .build().create(PlaceApiService::class.java)
 
+    private var request: Call<SuggestionResult>? = null
+
     private val queryMap = mutableMapOf<String, String?>()
 
     fun type(value: String?) = apply { queryMap["types"] = value }
@@ -28,16 +30,24 @@ class PlaceServiceClient internal constructor(private val apiKey: String) {
     fun language(value: String?) = apply { queryMap["language"] = value }
 
     init {
+        queryMap["key"] = apiKey
         type("vn")
         language("vn")
     }
 
-    fun getAddressPredictions(input: String, response: (status: PlaceApiServiceStatus, predictions: List<Prediction>) -> Unit):
-            Single<SuggestionResult> {
-        queryMap["input"] = input
-        return apiService.getAddressSuggestion(apiKey, queryMap.filterValues { it != null })
-                .doOnSuccess {
-                    response.invoke(PlaceApiServiceStatus.valueOf(it.status), it.predictions)
-                }
+    fun cancel() = request?.takeUnless { it.isCanceled }?.cancel()
+
+    fun getAddressPredictions(input: String,
+                              responseCallback: (SuggestionResult) -> Unit,
+                              errorCallback: ((Throwable) -> Unit)?) {
+        cancel()
+        request = apiService.findPlacePredictions(input, queryMap).apply {
+            val response = execute()
+            if (response.isSuccessful) {
+                responseCallback.invoke(response.body()!!)
+            } else {
+                errorCallback?.invoke(Exception(response.errorBody()?.string()))
+            }
+        }
     }
 }
