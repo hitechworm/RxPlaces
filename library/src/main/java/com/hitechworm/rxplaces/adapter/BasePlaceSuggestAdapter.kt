@@ -14,8 +14,11 @@ import com.hitechworm.rxplaces.entity.Prediction
 abstract class BasePlaceSuggestAdapter(googleApiKey: String) : BaseAdapter(), Filterable {
 
     private var data: MutableList<Prediction>? = null
+
     private var inflater: LayoutInflater? = null
+
     private var filter: Filter? = null
+
     var placeServiceClient = PlaceServiceClient.create(googleApiKey)
 
     override fun getItem(position: Int) = data!![position]
@@ -64,9 +67,16 @@ abstract class BasePlaceSuggestAdapter(googleApiKey: String) : BaseAdapter(), Fi
 
         @Suppress("UNCHECKED_CAST")
         override fun publishResults(text: CharSequence?, result: FilterResults?) {
-            result?.let {
-                data?.clear()
-                data?.addAll(result.values as List<Prediction>)
+            result?.values?.let {
+                data = data ?: mutableListOf()
+                data!!.clear()
+                data!!.addAll(it as List<Prediction>)
+
+                if (data!!.size > 0) {
+                    notifyDataSetChanged()
+                } else {
+                    notifyDataSetInvalidated()
+                }
             }
         }
 

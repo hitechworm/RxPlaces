@@ -8,7 +8,9 @@ data class Prediction(
         @SerializedName("place_id") val placeId: String,
         @SerializedName("matched_substrings") val matchedSubstrings: List<MatchedSubstring?>,
         @SerializedName("terms") val terms: List<Term>,
-        @SerializedName("types") val types: List<String?>)
+        @SerializedName("types") val types: List<String?>) {
+    override fun toString() = description
+}
 
 data class MatchedSubstring(
         @SerializedName("length") val length: Int?,
