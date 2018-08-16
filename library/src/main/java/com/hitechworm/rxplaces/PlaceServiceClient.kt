@@ -16,7 +16,7 @@ class PlaceServiceClient internal constructor(private val apiKey: String) {
     }
 
     private var apiService = Retrofit.Builder()
-            .baseUrl("https://maps.googleapis.com/maps/api/place/autocomplete")
+            .baseUrl("https://maps.googleapis.com/maps/api/place/autocomplete/")
             .addConverterFactory(GsonConverterFactory.create())
             .client(OkHttpClient())
             .build().create(PlaceApiService::class.java)
@@ -25,14 +25,14 @@ class PlaceServiceClient internal constructor(private val apiKey: String) {
 
     private val queryMap = mutableMapOf<String, String?>()
 
-    fun type(value: String?) = apply { queryMap["types"] = value }
+    fun type(value: String?) = apply { queryMap["type"] = value }
 
     fun language(value: String?) = apply { queryMap["language"] = value }
 
     init {
         queryMap["key"] = apiKey
-        type("vn")
-        language("vn")
+        type("address")
+        language("VN")
     }
 
     fun cancel() = request?.takeUnless { it.isCanceled }?.cancel()
