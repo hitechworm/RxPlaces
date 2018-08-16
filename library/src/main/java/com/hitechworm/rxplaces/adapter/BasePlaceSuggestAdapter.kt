@@ -7,7 +7,6 @@ import android.widget.BaseAdapter
 import android.widget.Filter
 import android.widget.Filterable
 import android.widget.TextView
-import com.hitechworm.rxplaces.PlaceApiServiceStatus
 import com.hitechworm.rxplaces.PlaceServiceClient
 import com.hitechworm.rxplaces.entity.Prediction
 
@@ -58,9 +57,10 @@ abstract class BasePlaceSuggestAdapter(googleApiKey: String) : BaseAdapter(), Fi
         override fun performFiltering(text: CharSequence?): FilterResults {
             val filterResults = FilterResults()
             text?.let {
-                placeServiceClient.getAddressPredictions(text.toString(), { result ->
-                    filterResults.handleResponse(PlaceApiServiceStatus.valueOf(result.status), result.predictions)
-                }, ::error)
+                placeServiceClient.getAddressPredictions(text.toString())?.let {
+                    filterResults.values = it
+                    filterResults.count = it.size
+                }
             }
             return filterResults
         }
@@ -77,13 +77,6 @@ abstract class BasePlaceSuggestAdapter(googleApiKey: String) : BaseAdapter(), Fi
                 } else {
                     notifyDataSetInvalidated()
                 }
-            }
-        }
-
-        private fun FilterResults.handleResponse(status: PlaceApiServiceStatus, predictions: List<Prediction>) {
-            if (status == PlaceApiServiceStatus.OK) {
-                values = predictions
-                count = predictions.size
             }
         }
     }

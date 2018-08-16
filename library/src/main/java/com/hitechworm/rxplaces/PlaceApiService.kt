@@ -1,8 +1,10 @@
 package com.hitechworm.rxplaces
 
 import com.hitechworm.rxplaces.entity.SuggestionResult
+import io.reactivex.Single
 import retrofit2.Call
 import retrofit2.http.GET
+import retrofit2.http.Path
 import retrofit2.http.Query
 import retrofit2.http.QueryMap
 
@@ -17,8 +19,15 @@ enum class PlaceApiServiceStatus(val status: String) {
 
 interface PlaceApiService {
 
-    @GET("json")
+    @GET("{response_type}")
     fun findPlacePredictions(
+            @Path("response_type") responseType: String = "json",
             @Query("input") input: String,
-            @QueryMap query: Map<String, String?>): Call<SuggestionResult>
+            @QueryMap queries: Map<String, String?>): Call<SuggestionResult>
+
+    @GET("{response_type}")
+    fun findRxPlacePredictions(
+            @Path("response_type") responseType: String = "json",
+            @Query("input") input: String,
+            @QueryMap queries: Map<String, String?>): Single<SuggestionResult>
 }

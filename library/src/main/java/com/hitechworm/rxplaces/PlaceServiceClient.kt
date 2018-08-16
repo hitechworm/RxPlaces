@@ -1,13 +1,15 @@
 package com.hitechworm.rxplaces
 
+import com.hitechworm.rxplaces.entity.Prediction
 import com.hitechworm.rxplaces.entity.SuggestionResult
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
 import okhttp3.OkHttpClient
-import retrofit2.Call
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import java.lang.Exception
 
-class PlaceServiceClient internal constructor(private val apiKey: String) {
+class PlaceServiceClient internal constructor(apiKey: String) {
 
     companion object {
         fun create(apiKey: String): PlaceServiceClient {
@@ -15,13 +17,13 @@ class PlaceServiceClient internal constructor(private val apiKey: String) {
         }
     }
 
+    private var request: Disposable? = null
+
     private var apiService = Retrofit.Builder()
             .baseUrl("https://maps.googleapis.com/maps/api/place/autocomplete/")
             .addConverterFactory(GsonConverterFactory.create())
             .client(OkHttpClient())
             .build().create(PlaceApiService::class.java)
-
-    private var request: Call<SuggestionResult>? = null
 
     private val queryMap = mutableMapOf<String, String?>()
 
@@ -35,19 +37,29 @@ class PlaceServiceClient internal constructor(private val apiKey: String) {
         language("VN")
     }
 
-    fun cancel() = request?.takeUnless { it.isCanceled }?.cancel()
+    fun getRxAddressPredictions(input: String) =
+            apiService.findRxPlacePredictions(input = input, queries = queryMap)
+                    .map { it ->
+                        if (it.status == PlaceApiServiceStatus.OK.status) {
+                            it.predictions
+                        } else {
+                            null
+                        }
+                    }
 
-    fun getAddressPredictions(input: String,
-                              responseCallback: (SuggestionResult) -> Unit,
-                              errorCallback: ((Throwable) -> Unit)?) {
-        cancel()
-        request = apiService.findPlacePredictions(input, queryMap).apply {
-            val response = execute()
-            if (response.isSuccessful) {
-                responseCallback.invoke(response.body()!!)
-            } else {
-                errorCallback?.invoke(Exception(response.errorBody()?.string()))
-            }
-        }
+    fun getAddressPredictionsAsync(input: String, successCallback: (List<Prediction>?) -> Unit, errorCallback: ((Throwable) -> Unit)? = null) {
+        request?.takeUnless { it.isDisposed }?.dispose()
+        request = getRxAddressPredictions(input)
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.trampoline())
+                .subscribe({ successCallback.invoke(it) }, { errorCallback?.invoke(it) })
     }
+
+    fun getAddressPredictions(input: String) = apiService.findPlacePredictions(input = input, queries = queryMap).execute().result()
+
+    private fun Response<SuggestionResult>.result() =
+            when {
+                body() != null && PlaceApiServiceStatus.OK.status == body()!!.status -> body()!!.predictions
+                else -> null
+            }
 }
