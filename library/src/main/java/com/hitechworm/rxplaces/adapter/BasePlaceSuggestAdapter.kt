@@ -57,9 +57,13 @@ abstract class BasePlaceSuggestAdapter(googleApiKey: String) : BaseAdapter(), Fi
         override fun performFiltering(text: CharSequence?): FilterResults {
             val filterResults = FilterResults()
             text?.let {
-                placeServiceClient.getAddressPredictions(text.toString())?.let {
-                    filterResults.values = it
-                    filterResults.count = it.size
+                try {
+                    placeServiceClient.getAddressPredictions(text.toString())?.let {
+                        filterResults.values = it
+                        filterResults.count = it.size
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
             }
             return filterResults
