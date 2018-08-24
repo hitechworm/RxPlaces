@@ -14,7 +14,7 @@ abstract class BasePlaceSuggestAdapter(googleApiKey: String) : BaseAdapter(), Fi
 
     private var data: MutableList<Prediction>? = null
 
-    private var inflater: LayoutInflater? = null
+    var inflater: LayoutInflater? = null
 
     private var filter: Filter? = null
 
